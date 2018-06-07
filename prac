@@ -1,0 +1,82 @@
+import cx_Oracle
+from datetime import datetime
+import paramiko
+import psycopg2
+
+def convert_data_to_dict(fetch_data):
+    fetched_data=[]
+    labels=['FLOW_NAME','STREAM_NAME','ALIAS','EVENT_ID','CREATION_DATE']
+    for line in fetch_data:
+        my_dict={}
+        for label,value in zip(labels,line):
+            my_dict[label]=value
+        fetched_data.append(my_dict)
+    return fetched_data
+
+def get_flow_data(fetched_data):
+    flow_id=0
+    flows_data=[]
+    temp_evt_id=set([])
+    for line in fetched_data:
+        flow_data=[]
+        if line['EVENT_ID'] not in temp_evt_id:
+            temp_evt_id.add(line['EVENT_ID'])
+            flow_id=flow_id+1
+            flow_data.append(flow_id)
+            flow_data.append(line['FLOW_NAME'])
+            flow_data.append(line['CREATION_DATE'])
+            flow_data.append(1)
+            flows_data.append(flow_data)            
+    return flows_data
+    
+            
+if __name__== "__main__":
+    
+    try:
+        conn=cx_Oracle.connect('toolamc/toolamc@indlin3909/TOOLS3I')
+        cur=conn.cursor()
+        
+        fetch_data=cur.execute("SELECT IMT_EVT.FLOW_NAME,IMT_EVT.JOB_OR_STREAM,IMT_EVT.ALIAS,IMT_EVT.EVT_ID,IMT_EVT.CREATION_DATE from IMT_EVT WHERE IMT_EVT.RUN_USER='SCHED_ADMIN' and CREATION_DATE>'11-MAY-18'")
+        print("FETCHED DATA")
+
+        fetched_data=convert_data_to_dict(fetch_data)        
+        alias_list=[line["ALIAS"] for line in fetched_data]
+        flows_data=get_flow_data(fetched_data)
+        
+    except cx_Oracle.DatabaseError as e:
+        print(e.args)
+
+    cur.close()
+    
+    try:
+        hostname='indlin3905'
+        username='imt3905'
+        password='Unix_11'
+
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        client.connect(hostname, username=username, password=password, look_for_keys=False, allow_agent=False)
+        print("connection established")
+
+        
+        command="cd TWA/TWS/stdlist/logs && cat imt_event_handler_*.log'"
+        stdin,stdout,stderr=client.exec_command(command)
+        file = open("log_file.txt","w")
+        log_file_data=[]
+        for line in stdout.readlines():
+            log_file_data.append(line)
+            file.write(line)
+            print(line)
+        file.close()
+
+    except Exception as e:
+        print(e.args)
+    client.close()
+
+
+
+
+
+
+
