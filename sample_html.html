@@ -1,0 +1,101 @@
+﻿<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<div class="datapoint" data-popout="1">1</div>
+<div class="popout popout-1">p-1</div>
+<div class="datapoint" data-popout="2">2</div>
+<div class="popout popout-2">p-2</div>
+
+<script>
+$('.datapoint').click(function() {
+  var popout = $(this).data('popout');
+  $(".popout-" + popout).toggle();
+});
+</script>
+
+
+
+{% extends 'swp/base.html' %}
+{% block head %}
+{% load staticfiles %}
+<link rel="stylesheet" type="text/css" href="{% static 'swp/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'swp/base_style.css' %}">
+
+    <style>
+
+    td{
+        text-align: center;
+    }
+
+        .jobrow{
+    display:none
+}
+    .streamrow{
+    display:none
+}
+
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script>
+    $(document).ready(function () {
+        $('.flowrow').click(function () {
+            $(this).nextUntil('tr.flowrow').animate({ opacity: "toggle" });
+        });
+
+    });
+
+    $(document).ready(function () {
+        $('.streamrow').click(function () {
+            $(this).nextUntil('tr.streamrow').animate({ opacity: "toggle" });
+        });
+
+    })
+    </script>
+    {% endblock %}
+    {% block body %}
+    {% if project %}
+    <table >
+      <tr>
+        <th>Flow ID</th>
+        <th>Flow name</th>
+        <th>Creation Date</th>
+      </tr>
+      {% for flow in project.dimflow_set.all %}
+      <tr class="flowrow" >
+        <td>{{ flow.flow_id }} </td>
+        <td>{{ flow.flow_name }}</td>
+        <td>{{ flow.flow_creation_date }}</td>
+      </tr>
+
+      {% for stream in flow.dimstream_set.all %}
+  <tr class="streamrow" style="background-color: darkgrey">
+    <td>{{ stream.stream_name }}</td>
+    <td>{{ stream.stream_start_time }}</td>
+    <td>{{ stream.stream_end_time }}</td>
+    <td>{{ stream.stream_status }}</td>
+      <td><a href="#">{{ stream.alias }}</a></td>
+   </tr>
+  <tr class="jobrow" style="background-color: black;color: white">
+                            <td>Job name</td>
+                            <td>Job start time</td>
+                            <td>job end time</td>
+                            <td>status</td>
+       </tr>
+      {% for job in stream.dimjob_set.all %}
+                            <tr class="jobrow">
+                                <td>{{ job.job_name }}</td>
+                                <td>{{ job.job_start_time }}</td>
+                                <td>{{ job.job_end_time }}</td>
+                                <td>{{ job.job_status }}</td>
+                             </tr>
+      {% endfor %}
+
+  {% endfor %}
+      {% endfor %}
+    </table>
+    {%  else %}
+    <h3>No flows in the project</h3>
+{% endif %}
+
+    {%  endblock %}
+
+
